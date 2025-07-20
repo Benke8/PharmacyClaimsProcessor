@@ -1,0 +1,61 @@
+# Headless service for Kafka (needed for broker DNS)
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka
+  labels:
+    app: kafka
+spec:
+  clusterIP: None # Headless service
+  selector:
+    app: kafka
+  ports:
+    - port: 9092
+      name: broker
+---
+# StatefulSet for Kafka
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kafka
+  labels:
+    app: kafka
+spec:
+  serviceName: kafka # Matches headless service name
+  replicas: 3
+  selector:
+    matchLabels:
+      app: kafka
+  template:
+    metadata:
+      labels:
+        app: kafka
+    spec:
+      containers:
+        - name: kafka
+          image: bitnami/kafka:3.6.0
+          ports:
+            - containerPort: 9092
+              name: broker
+          env:
+            - name: KAFKA_CFG_ZOOKEEPER_CONNECT
+              value: zookeeper:2181
+            - name: ALLOW_PLAINTEXT_LISTENER
+              value: "yes" # Set to "no" in prod and enable TLS
+            - name: KAFKA_CFG_LISTENERS
+              value: PLAINTEXT://:9092
+            - name: KAFKA_CFG_ADVERTISED_LISTENERS_COMMAND
+              value: "echo PLAINTEXT://$(hostname).kafka:9092"
+            - name: KAFKA_BROKER_ID_COMMAND
+              value: "echo ${HOSTNAME##*-}"
+          volumeMounts:
+            - name: kafka-data
+              mountPath: /bitnami/kafka
+  volumeClaimTemplates:
+    - metadata:
+        name: kafka-data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 10Gi

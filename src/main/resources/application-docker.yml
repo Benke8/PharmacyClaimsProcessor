@@ -1,0 +1,10 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres:5432/mydb
+    username: postgres
+    password: postgres
+  kafka:
+    bootstrap-servers: kafka:9092
+
+app:
+  retry-count: ${APP_RETRY_COUNT:3}  # app retry count

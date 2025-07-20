@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pcapp
+  labels:
+    app: pcapp
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: pcapp
+  template:
+    metadata:
+      labels:
+        app: pcapp
+    spec:
+      containers:
+        - name: pcapp
+          image: benke8/pharmacyclaimsprocessor:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: APP_RETRY_COUNT
+              valueFrom:
+                configMapKeyRef:
+                  name: pcapp-config
+                  key: APP_RETRY_COUNT
+            - name: SPRING_PROFILES_ACTIVE
+              value: k8s
+            - name: DB_HOST
+              value: postgres-service
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: mydb
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: password
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: kafka-0.kafka:9092,kafka-1.kafka:9092,kafka-2.kafka:9092
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
