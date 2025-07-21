@@ -6,10 +6,13 @@ import java.util.List;
 import org.kie.api.runtime.KieContainer;
 import org.kie.api.runtime.KieSession;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
 import com.claim_processor.dto.ClaimDTO;
+import com.claim_processor.dto.ErrorClaimDTO;
+import com.claim_processor.entity.ErrorClaim;
 import com.claim_processor.util.ClaimMapper;
 
 @Service
@@ -17,6 +20,9 @@ public class ClaimProcessor {
 
     @Autowired
     private KieContainer kieContainer;
+
+    @Value("${claim.retry-count}")
+    private int retryCount;
     
     private final ClaimServiceImpl claimService;
     private final ErrorClaimServiceImpl errorClaimService;
@@ -52,9 +58,17 @@ public class ClaimProcessor {
             kafkaProducerService.produceClaimEvent("processed-claims", dto);
         }
         else {
-            errorClaimService.saveClaim(claimMapper.toModel(dto));
-            System.out.println("Claim moved to error repository: " + errorList);
-            kafkaProducerService.produceClaimEvent("live-claims", dto);
+            ErrorClaimDTO eDto = (ErrorClaimDTO) dto;
+            if(eDto.getRetryCount() > 2)
+            {
+                System.out.println("Claim: " + eDto.getClaimNumber() + " reached maximum retry count");
+            }
+            else {
+                eDto.setRetryCount(eDto.getRetryCount() + 1);
+                errorClaimService.updateClaim((ErrorClaim)claimMapper.toModel(eDto), dto.getClaimNumber());
+                System.out.println("Claim moved to error repository: " + errorList);
+                kafkaProducerService.produceClaimEvent("live-claims", dto);    
+            }
         }
     }
 }

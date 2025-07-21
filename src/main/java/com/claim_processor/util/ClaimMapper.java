@@ -15,7 +15,7 @@ import com.claim_processor.enums.InsureStatus;
 
 @Component
 public class ClaimMapper {
-    
+
     public Claim toModel(ClaimDTO dto) {
         Claim claim = new Claim();
         claim.setClaimNumber(dto.getClaimNumber());

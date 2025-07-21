@@ -1,43 +1,44 @@
 package com.claim_processor.service.impl;
 
 import java.util.List;
+import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.claim_processor.entity.Claim;
+import com.claim_processor.entity.ErrorClaim;
 import com.claim_processor.repository.ErrorClaimRepository;
-import com.claim_processor.service.ClaimService;
+import com.claim_processor.service.ErrorClaimService;
 
 @Service
-public class ErrorClaimServiceImpl implements ClaimService {
+public class ErrorClaimServiceImpl implements ErrorClaimService {
 
     @Autowired
     private ErrorClaimRepository errorClaimRepository;
 
     @Override
-    public Claim saveClaim(Claim claim) {
-        // TODO Auto-generated method stub
-        //make sure this returns errorclaim
-        throw new UnsupportedOperationException("Unimplemented method 'saveClaim'");
+    public ErrorClaim saveClaim(ErrorClaim claim) {
+        return errorClaimRepository.save(claim);
+    }
+    @Override
+    public List<ErrorClaim> getClaims() {
+        return (List<ErrorClaim>) errorClaimRepository.findAll();
     }
 
     @Override
-    public List<Claim> getClaims() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getClaims'");
-    }
+    public ErrorClaim updateClaim(ErrorClaim claim, Long claimId) {
+        ErrorClaim eclmdb = errorClaimRepository.findById(claimId).get();
 
-    @Override
-    public Claim updateClaim(Claim claim, Long claimId) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'updateClaim'");
+        if(Objects.nonNull(claim.getRetryCount()) && claim.getRetryCount() != 0) {
+            eclmdb.setRetryCount(claim.getRetryCount());
+        }
+
+        return errorClaimRepository.save(eclmdb);
     }
 
     @Override
     public void deleteClaimById(Long claimId) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'deleteClaimById'");
+        errorClaimRepository.deleteById(claimId);    
     }
     
 }
