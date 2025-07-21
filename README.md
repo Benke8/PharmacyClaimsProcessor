@@ -74,7 +74,7 @@ kubectl get pods
 To test, you can expose the spring boot service locally by port forwarding it:
 
 ```bash
-kubectl port-forward svc/pcapp 8080:8080
+kubectl port-forward svc/pcapp-service 8080:8080
 ```
 and then visit http://localhost:8080/actuator/health
 

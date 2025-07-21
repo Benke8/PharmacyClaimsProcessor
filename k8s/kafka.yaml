@@ -1,4 +1,3 @@
-# Headless service for Kafka (needed for broker DNS)
 apiVersion: v1
 kind: Service
 metadata:
@@ -6,14 +5,13 @@ metadata:
   labels:
     app: kafka
 spec:
-  clusterIP: None # Headless service
+  clusterIP: None
   selector:
     app: kafka
   ports:
     - port: 9092
       name: broker
 ---
-# StatefulSet for Kafka
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -39,25 +37,30 @@ spec:
               name: broker
           env:
             - name: KAFKA_KRAFT_MODE
-              value: true"
+              value: "true"
             - name: KAFKA_CFG_NODE_ID
               valueFrom:
                 fieldRef:
-                  fieldPath: "echo ${HOSTNAME##*-}"
+                  fieldPath: metadata.name
             - name: KAFKA_CFG_PROCESS_ROLES
               value: "controller,broker"
             - name: ALLOW_PLAINTEXT_LISTENER
               value: "yes" # Set to "no" in prod and enable TLS
             - name: KAFKA_CFG_LISTENERS
               value: PLAINTEXT://:9092,CONTROLLER://:9093
-            - name: KAFKA_CFG_ADVERTISED_LISTENERS_COMMAND
-              value: "echo PLAINTEXT://$(hostname).kafka:9092"
+            - name: KAFKA_CFG_ADVERTISED_LISTENERS
+              value: PLAINTEXT://:9092
             - name: KAFKA_CFG_CONTROLLER_LISTENER_NAMES
               value: CONTROLLER
-            - name: KAFKA_BROKER_ID_COMMAND
-              value: "echo ${HOSTNAME##*-}"
             - name: KAFKA_CFG_CONTROLLER_QUORUM_VOTERS
               value: "0@kafka-0.kafka:9093,1@kafka-1.kafka:9093,2@kafka-2.kafka:9093"
+          command:
+            - /bin/bash
+            - -c
+            - |
+              export KAFKA_CFG_NODE_ID=${HOSTNAME##*-}
+              export KAFKA_CFG_ADVERTISED_LISTENERS="PLAINTEXT://${HOSTNAME}.kafka:9092"
+              /opt/bitnami/scripts/kafka/entrypoint.sh /opt/bitnami/scripts/kafka/run.sh
           volumeMounts:
             - name: kafka-data
               mountPath: /bitnami/kafka
