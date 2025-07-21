@@ -1,7 +1,6 @@
 package com.claim_processor.entity;
 
 import java.io.Serializable;
-import java.time.LocalDate;
 import java.util.List;
 
 import com.claim_processor.enums.InsureStatus;

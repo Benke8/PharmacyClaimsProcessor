@@ -15,12 +15,15 @@ public class DroolsConfig {
     private static final KieServices kieServices = KieServices.Factory.get();
     private static final String RULES_DRL = "claim-rules.drl";
  
-   @Bean
-     public KieContainer kieContainer() {
+    @Bean
+    KieContainer kieContainer() {
          KieFileSystem kieFileSystem = kieServices.newKieFileSystem();
          kieFileSystem.write(ResourceFactory.newClassPathResource(RULES_DRL));
          KieBuilder kb = kieServices.newKieBuilder(kieFileSystem);
          kb.buildAll();
+         if(kb.getResults().hasMessages(org.kie.api.builder.Message.Level.ERROR)) {
+            throw new RuntimeException("Drools Build Errors:\n" + kb.getResults().toString());
+         }
          KieModule kieModule = kb.getKieModule();
          KieContainer kieContainer = kieServices.newKieContainer(kieModule.getReleaseId());
          return kieContainer;

@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.kie.api.runtime.KieContainer;
 import org.kie.api.runtime.KieSession;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -18,9 +19,6 @@ import com.claim_processor.util.ClaimMapper;
 @Service
 public class ClaimProcessor {
 
-    @Autowired
-    private KieContainer kieContainer;
-
     @Value("${claim.retry-count}")
     private int retryCount;
     
@@ -28,19 +26,22 @@ public class ClaimProcessor {
     private final ErrorClaimServiceImpl errorClaimService;
     private final KafkaProducerService kafkaProducerService;
     private final ClaimMapper claimMapper;
+    private final KieContainer kieContainer;
 
     public ClaimProcessor(ClaimServiceImpl claimService,
                           ErrorClaimServiceImpl errorClaimService,
                           KafkaProducerService kafkaProducerService,
-                          ClaimMapper claimMapper) {
+                          ClaimMapper claimMapper,
+                          KieContainer kieContainer) {
         this.claimService = claimService;
         this.errorClaimService = errorClaimService;
         this.kafkaProducerService = kafkaProducerService;
         this.claimMapper = claimMapper;
+        this.kieContainer = kieContainer;
     }
 
     @KafkaListener(topics = "live-claims", groupId = "claim-group")
-    public void ProcessClaim(ClaimDTO dto) {
+    public void processClaim(ClaimDTO dto) {
         System.out.println("Processing Claim: " + dto.getClaimNumber());
 
         List<String> errorList = new ArrayList<>();
@@ -58,15 +59,18 @@ public class ClaimProcessor {
             kafkaProducerService.produceClaimEvent("processed-claims", dto);
         }
         else {
-            ErrorClaimDTO eDto = (ErrorClaimDTO) dto;
+            ErrorClaimDTO eDto = new ErrorClaimDTO();
+            BeanUtils.copyProperties(dto, eDto);
+
             if(eDto.getRetryCount() > 2)
             {
                 System.out.println("Claim: " + eDto.getClaimNumber() + " reached maximum retry count");
             }
             else {
                 eDto.setRetryCount(eDto.getRetryCount() + 1);
-                errorClaimService.updateClaim((ErrorClaim)claimMapper.toModel(eDto), dto.getClaimNumber());
-                System.out.println("Claim moved to error repository: " + errorList);
+                ErrorClaim eClaim = claimMapper.toModel(eDto);
+                errorClaimService.saveClaim(eClaim);
+                System.out.println("Claim moved to error repository: " + errorList + "\nFor " + eDto.getRetryCount() + " time");
                 kafkaProducerService.produceClaimEvent("live-claims", dto);    
             }
         }

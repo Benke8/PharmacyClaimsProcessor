@@ -1,5 +1,3 @@
-package com.claim_processor.rules;
-
 import com.claim_processor.dto.ClaimDTO;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;

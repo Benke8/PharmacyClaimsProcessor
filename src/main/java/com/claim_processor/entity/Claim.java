@@ -1,8 +1,6 @@
 package com.claim_processor.entity;
 
 import java.io.Serializable;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import com.claim_processor.enums.ClaimStatus;
 
 import jakarta.persistence.Column;

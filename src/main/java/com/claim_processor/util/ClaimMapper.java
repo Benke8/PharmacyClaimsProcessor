@@ -3,10 +3,12 @@ package com.claim_processor.util;
 import org.springframework.stereotype.Component;
 
 import com.claim_processor.dto.ClaimDTO;
+import com.claim_processor.dto.ErrorClaimDTO;
 import com.claim_processor.dto.InsuranceDTO;
 import com.claim_processor.dto.PatientDTO;
 import com.claim_processor.dto.PharmacyDTO;
 import com.claim_processor.entity.Claim;
+import com.claim_processor.entity.ErrorClaim;
 import com.claim_processor.entity.Insurance;
 import com.claim_processor.entity.Patient;
 import com.claim_processor.entity.Pharmacy;
@@ -15,6 +17,12 @@ import com.claim_processor.enums.InsureStatus;
 
 @Component
 public class ClaimMapper {
+
+    public ErrorClaim toModel(ErrorClaimDTO eDto) {
+        ErrorClaim eClaim = new ErrorClaim();
+        eClaim.setRetryCount((eDto.getRetryCount()));
+        return eClaim;
+    }
 
     public Claim toModel(ClaimDTO dto) {
         Claim claim = new Claim();
