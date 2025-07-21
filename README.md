@@ -85,6 +85,7 @@ kubectl delete -f k8s/
 
 
 ## Example API Call:
+The endpoint for sending claims to is http://localhost:8080/claims
 ```json
 {
   "claimNumber": 123456789,
