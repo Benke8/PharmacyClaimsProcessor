@@ -1,0 +1,52 @@
+package com.claim_processor.rules;
+
+import com.claim_processor.dto.ClaimDTO;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+
+global List errorList;
+
+rule "Reject Claims Missing Insurance Provider Name"
+    when
+        $claim : ClaimDTO(insurance.insurerName == "" || insurance.insurerName == null)
+    then
+        System.out.println("Rejected: Claim missing insurer name");
+        errorList.add("Claim must have insurance provider name.");
+end
+rule "Reject claim if submitted amount is zero"
+when
+    $claim : ClaimDTO(fullTotal <= 0)
+then
+    System.out.println(" Rejected: Claim amount is zero.");
+    errorList.add("Claim amount must be greater than zero.");
+end
+
+rule "Reject claim if patient is missing"
+when
+    $claim : ClaimDTO(patient == null)
+then
+    System.out.println("Rejected: Patient information is missing.");
+    errorList.add("Patient information is required.");
+end
+
+rule "Reject claim if insurance coverage is expired"
+when
+    $claim : ClaimDTO(
+        insurance.coverageEndDate != null,
+        eval(
+            LocalDate.parse(insurance.coverageEndDate, DateTimeFormatter.ISO_DATE).isBefore(LocalDate.now())
+        )
+    )
+then
+    System.out.println("Rejected: Insurance coverage expired.");
+    errorList.add("Insurance coverage has expired.");
+end
+
+rule "Accept claim"
+when
+    $claim : ClaimDTO()
+    eval(errorList.isEmpty())
+then
+    System.out.println("Claim passed all validation.");
+end
