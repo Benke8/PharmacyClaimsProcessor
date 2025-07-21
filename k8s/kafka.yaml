@@ -43,7 +43,7 @@ spec:
             - name: KAFKA_CFG_NODE_ID
               valueFrom:
                 fieldRef:
-                  fieldPath: metadata.name
+                  fieldPath: "echo ${HOSTNAME##*-}"
             - name: KAFKA_CFG_PROCESS_ROLES
               value: "controller,broker"
             - name: ALLOW_PLAINTEXT_LISTENER
@@ -56,6 +56,8 @@ spec:
               value: CONTROLLER
             - name: KAFKA_BROKER_ID_COMMAND
               value: "echo ${HOSTNAME##*-}"
+            - name: KAFKA_CFG_CONTROLLER_QUORUM_VOTERS
+              value: "0@kafka-0.kafka:9093,1@kafka-1.kafka:9093,2@kafka-2.kafka:9093"
           volumeMounts:
             - name: kafka-data
               mountPath: /bitnami/kafka
